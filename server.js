@@ -15,16 +15,18 @@ function getUserInfo(req) {
 
   const decoded = Buffer.from(encoded, 'base64').toString('utf8');
   const clientPrincipal = JSON.parse(decoded);
-
   const claims = clientPrincipal.claims;
 
-  // Try name first, then preferred username or email
-  const nameClaim = claims.find(c => c.typ === 'name')?.val;
-  const emailClaim = claims.find(c => c.typ === 'preferred_username')?.val
-                  || claims.find(c => c.typ === 'emails')?.val;
+  const name = claims.find(c => c.typ === 'name')?.val;
+  const email = claims.find(c => c.typ === 'preferred_username')?.val
+             || claims.find(c => c.typ === 'emails')?.val;
 
-  return nameClaim || emailClaim || 'Unknown';
+  return {
+    name: name || 'Unknown',
+    email: email || 'Unknown'
+  };
 }
+
 
 
 
@@ -41,22 +43,21 @@ app.get('/', async (req, res) => {
 
 // Authenticated user page
 app.get('/profile', (req, res) => {
-  const userName = getUserInfo(req);
+  const userInfo = getUserInfo(req);
 
-  if (!userName) {
+  if (!userInfo) {
     return res.redirect('/');
   }
 
   res.send(`
     <html>
       <body>
-        <h1>You are logged in as <strong>${userName},${emailClaim}</strong></h1>
+        <h1>You are logged in</h1>
+        <p><strong>Name:</strong> ${userInfo.name}</p>
+        <p><strong>Email:</strong> ${userInfo.email}</p>
         <a href="/.auth/logout">Sign out</a>
       </body>
     </html>
   `);
 });
 
-app.listen(port, () => {
-  console.log(`App running on http://localhost:${port}`);
-});
