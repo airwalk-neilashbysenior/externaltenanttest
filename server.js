@@ -16,8 +16,9 @@ function getUserInfo(req) {
   const decoded = Buffer.from(encoded, 'base64').toString('utf8');
   const clientPrincipal = JSON.parse(decoded);
 
-  const nameClaim = clientPrincipal.userDetails || clientPrincipal.userId || 'Unknown';
-  return nameClaim;
+  console.log("Decoded client principal:", clientPrincipal); // 👈 log it
+
+  return clientPrincipal.userDetails || clientPrincipal.userId || 'Unknown';
 }
 
 
