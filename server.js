@@ -16,10 +16,16 @@ function getUserInfo(req) {
   const decoded = Buffer.from(encoded, 'base64').toString('utf8');
   const clientPrincipal = JSON.parse(decoded);
 
-  console.log("Decoded client principal:", clientPrincipal); // 👈 log it
+  const claims = clientPrincipal.claims;
 
-  return clientPrincipal.userDetails || clientPrincipal.userId || 'Unknown';
+  // Try name first, then preferred username or email
+  const nameClaim = claims.find(c => c.typ === 'name')?.val;
+  const emailClaim = claims.find(c => c.typ === 'preferred_username')?.val
+                  || claims.find(c => c.typ === 'emails')?.val;
+
+  return nameClaim || emailClaim || 'Unknown';
 }
+
 
 
 // Homepage: unauthenticated users land here
