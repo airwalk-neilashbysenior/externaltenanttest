@@ -50,7 +50,7 @@ app.get('/profile', (req, res) => {
   res.send(`
     <html>
       <body>
-        <h1>You are logged in as <strong>${userName}</strong></h1>
+        <h1>You are logged in as <strong>${userName},${emailClaim}</strong></h1>
         <a href="/.auth/logout">Sign out</a>
       </body>
     </html>
