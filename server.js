@@ -1,14 +1,13 @@
 const express = require('express');
-const fetch = require('node-fetch');
 const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Serve static files in /views as HTML pages
+// Serve static files from the "views" folder
 app.use(express.static(path.join(__dirname, 'views')));
 
-// Helper to fetch Easy Auth user info
+// Extract user name and email from Easy Auth headers
 function getUserInfo(req) {
   const encoded = req.headers['x-ms-client-principal'];
   if (!encoded) return null;
@@ -27,24 +26,18 @@ function getUserInfo(req) {
   };
 }
 
-
-
-
-// Homepage: unauthenticated users land here
-app.get('/', async (req, res) => {
-  const userName = await getUserInfo(req);
-
-  if (!userName) {
-    res.sendFile(path.join(__dirname, 'views', 'home.html'));
-  } else {
-    res.redirect('/profile');
+// Unauthenticated landing page
+app.get('/', (req, res) => {
+  const userInfo = getUserInfo(req);
+  if (userInfo) {
+    return res.redirect('/profile');
   }
+  res.sendFile(path.join(__dirname, 'views', 'home.html'));
 });
 
-// Authenticated user page
+// Authenticated profile page
 app.get('/profile', (req, res) => {
   const userInfo = getUserInfo(req);
-
   if (!userInfo) {
     return res.redirect('/');
   }
@@ -61,3 +54,18 @@ app.get('/profile', (req, res) => {
   `);
 });
 
+// Optional: view all claims for debugging
+app.get('/debug', (req, res) => {
+  const encoded = req.headers['x-ms-client-principal'];
+  if (!encoded) return res.send("No identity info");
+
+  const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+  const clientPrincipal = JSON.parse(decoded);
+
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(clientPrincipal, null, 2));
+});
+
+app.listen(port, () => {
+  console.log(`App running on http://localhost:${port}`);
+});
