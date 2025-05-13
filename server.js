@@ -9,23 +9,17 @@ const port = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'views')));
 
 // Helper to fetch Easy Auth user info
-async function getUserInfo(req) {
-  const authHeader = req.headers['x-ms-token-aad-id-token'];
-  if (!authHeader) return null;
+function getUserInfo(req) {
+  const encoded = req.headers['x-ms-client-principal'];
+  if (!encoded) return null;
 
-  try {
-    const res = await fetch(`${req.protocol}://${req.get('host')}/.auth/me`, {
-      headers: {
-        'X-ZUMO-AUTH': req.headers['x-zumo-auth']
-      }
-    });
+  const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+  const clientPrincipal = JSON.parse(decoded);
 
-    const data = await res.json();
-    return data[0]?.user_claims?.find(c => c.typ === 'name')?.val || 'Unknown';
-  } catch {
-    return null;
-  }
+  const nameClaim = clientPrincipal.userDetails || clientPrincipal.userId || 'Unknown';
+  return nameClaim;
 }
+
 
 // Homepage: unauthenticated users land here
 app.get('/', async (req, res) => {
@@ -39,8 +33,8 @@ app.get('/', async (req, res) => {
 });
 
 // Authenticated user page
-app.get('/profile', async (req, res) => {
-  const userName = await getUserInfo(req);
+app.get('/profile', (req, res) => {
+  const userName = getUserInfo(req);
 
   if (!userName) {
     return res.redirect('/');
